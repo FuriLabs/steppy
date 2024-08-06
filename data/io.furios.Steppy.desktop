@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Steppy
+Comment=Walk hard, count your steps even harder! Walks are good!
+Exec=io.furios.Steppy
+Icon=io.furios.Steppy
+Terminal=false
+Categories=Utility;
+StartupNotify=true

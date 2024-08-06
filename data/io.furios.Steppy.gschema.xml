@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="io.furios.Steppy" path="/io/furios/Steppy/">
+    <key name="step-target" type="i">
+      <default>10000</default>
+      <summary>Daily step target</summary>
+      <description>The number of steps to aim for each day. Go touch some grass!</description>
+    </key>
+  </schema>
+</schemalist>
