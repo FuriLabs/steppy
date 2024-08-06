@@ -2,7 +2,12 @@ Source: furios-app-steppy
 Maintainer: Jesús Higueras <jesus@furilabs.com>
 Section: misc
 Priority: optional
-Build-Depends: debhelper (>= 11), meson, libgtk-4-dev, libadwaita-1-dev, libsqlite3-dev
+Build-Depends: debhelper (>= 13), meson, libgtk-4-dev, libadwaita-1-dev, libsqlite3-dev
 Standards-Version: 4.5.1
 Vcs-Browser: https://github.com/furilabs/steppy
 Vcs-Git: https://github.com/furilabs/steppy.git
+
+Package: furios-app-steppy
+Architecture: all
+Pre-Depends: ${misc:Pre-Depends}
+Description: I am a pedometer. That means I measure farts, but in Spanish.
