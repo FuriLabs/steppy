@@ -135,6 +135,7 @@ startup_cb (GtkApplication *app, gpointer user_data)
     }
 
     init_database (steppy);
+    request_sensor (steppy);
     get_sensor_reading (steppy);
     update_step_count (steppy);
 

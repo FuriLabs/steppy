@@ -5,6 +5,7 @@ request_sensor(SteppyApp *steppy)
 {
     GVariant *result;
     GError *error = NULL;
+    gboolean standby_success = FALSE;
     gint32 session_id = -1;
 
     // Ensure the plugin is loaded
@@ -25,6 +26,8 @@ request_sensor(SteppyApp *steppy)
         g_error_free(error);
         return -1;
     }
+
+    g_variant_unref(result);
 
     result = g_dbus_connection_call_sync(steppy->dbus_connection,
                                          "com.nokia.SensorService",
@@ -51,6 +54,30 @@ request_sensor(SteppyApp *steppy)
                                          "com.nokia.SensorService",
                                          "/SensorManager/stepcountersensor",
                                          "local.StepCounterSensor",
+                                         "setStandbyOverride",
+                                         g_variant_new("(ib)", session_id, TRUE),
+                                         G_VARIANT_TYPE("(b)"),
+                                         G_DBUS_CALL_FLAGS_NONE,
+                                         -1,
+                                         NULL,
+                                         &error);
+
+    if (error) {
+        g_warning("Failed to start sensor: %s", error->message);
+        g_error_free(error);
+    }
+
+    g_variant_get(result, "(b)", &standby_success);
+    g_variant_unref(result);
+
+    if (!standby_success) {
+        g_warning("Failed to set standby override");
+    }
+
+    result = g_dbus_connection_call_sync(steppy->dbus_connection,
+                                         "com.nokia.SensorService",
+                                         "/SensorManager/stepcountersensor",
+                                         "local.StepCounterSensor",
                                          "start",
                                          g_variant_new("(i)", session_id),
                                          NULL,
@@ -63,6 +90,8 @@ request_sensor(SteppyApp *steppy)
         g_warning("Failed to start sensor: %s", error->message);
         g_error_free(error);
     }
+
+    g_variant_unref(result);
 
     return session_id;
 }
