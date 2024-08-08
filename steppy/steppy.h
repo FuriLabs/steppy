@@ -5,6 +5,8 @@
 #include <sqlite3.h>
 #include <gio/gio.h>
 
+#include "ui/widgets/progress.h"
+
 #define APP_ID "io.furios.Steppy"
 #define UPDATE_INTERVAL_FOREGROUND 1
 #define UPDATE_INTERVAL_BACKGROUND 300
@@ -16,12 +18,13 @@ typedef struct {
     guint step_count;
     GTimeZone *timezone;
     AdwApplicationWindow *window;
-    AdwActionRow *step_row;
     GtkLabel *step_label;
+    GtkLabel *step_target_label;
     GSettings *settings;
     guint update_source_id;
     gint32 session_id;
     guint last_reading;
+    StpCircularProgress *progress_widget;
 } SteppyApp;
 
 #endif // __STEPPY_H__

@@ -33,13 +33,16 @@ static void
 update_ui (SteppyApp *steppy)
 {
     gchar *step_text = g_strdup_printf ("%d", steppy->step_count);
-    adw_action_row_set_subtitle (steppy->step_row, step_text);
+    gtk_label_set_text (GTK_LABEL (steppy->step_label), step_text);
     g_free (step_text);
 
     gint target = g_settings_get_int (steppy->settings, "step-target");
-    gchar *target_text = g_strdup_printf ("%d / %d", steppy->step_count, target);
-    adw_action_row_set_subtitle (steppy->step_row, target_text);
+    gchar *target_text = g_strdup_printf ("%d", target);
+    gtk_label_set_text (GTK_LABEL (steppy->step_target_label), target_text);
     g_free (target_text);
+
+    double progress = (double)steppy->step_count / target;
+    stp_circular_progress_set_progress(steppy->progress_widget, progress);
 }
 
 static gboolean
@@ -99,6 +102,18 @@ window_active_handler(GtkWindow *window, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
+setup_css(SteppyApp *steppy)
+{
+    GtkCssProvider *provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(provider,
+        "label#count-label { font-weight: 900; font-size: 24pt; }"
+        "label#target-label { font-weight: 200; font-size: 14pt; color: gray; }",
+        -1);
+
+    gtk_style_context_add_provider_for_display(gdk_display_get_default(), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+}
+
+static void
 activate_cb (GtkApplication *app, gpointer user_data)
 {
     SteppyApp *steppy = (SteppyApp *)user_data;
@@ -119,12 +134,33 @@ activate_cb (GtkApplication *app, gpointer user_data)
         adw_clamp_set_maximum_size (clamp, 400);
         adw_clamp_set_tightening_threshold (clamp, 300);
 
-        AdwPreferencesGroup *group = ADW_PREFERENCES_GROUP (adw_preferences_group_new ());
-        steppy->step_row = ADW_ACTION_ROW (adw_action_row_new ());
-        adw_action_row_set_subtitle (steppy->step_row, "Steps");
-        adw_preferences_group_add (group, GTK_WIDGET (steppy->step_row));
+        steppy->progress_widget = stp_circular_progress_new();
+        gtk_widget_set_size_request (GTK_WIDGET (steppy->progress_widget), 400, 400);
+        gtk_widget_set_halign (GTK_WIDGET (steppy->progress_widget), GTK_ALIGN_CENTER);
+        gtk_widget_set_valign (GTK_WIDGET (steppy->progress_widget), GTK_ALIGN_CENTER);
 
-        adw_clamp_set_child (clamp, GTK_WIDGET (group));
+        GtkWidget *count_label = gtk_label_new("");
+        gtk_widget_add_css_class(count_label, "count-label");
+        gtk_widget_set_name(count_label, "count-label");
+        
+        GtkWidget *target_label = gtk_label_new("");
+        gtk_widget_add_css_class(target_label, "target-label");
+        gtk_widget_set_name(target_label, "target-label");
+
+        GtkWidget *labels_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+        gtk_box_append(GTK_BOX(labels_box), count_label);
+        gtk_box_append(GTK_BOX(labels_box), target_label);
+
+        gtk_widget_set_halign(labels_box, GTK_ALIGN_CENTER);
+        gtk_widget_set_valign(labels_box, GTK_ALIGN_CENTER);
+
+        steppy->step_label = GTK_LABEL(count_label);
+        steppy->step_target_label = GTK_LABEL(target_label);
+
+        gtk_box_append(GTK_BOX(steppy->progress_widget), labels_box);
+
+        stp_circular_progress_set_child(steppy->progress_widget, GTK_WIDGET (labels_box));
+        adw_clamp_set_child (clamp, GTK_WIDGET (steppy->progress_widget));
         gtk_box_append (content, GTK_WIDGET (clamp));
 
         adw_application_window_set_content (steppy->window, GTK_WIDGET (content));
@@ -162,6 +198,7 @@ startup_cb (GtkApplication *app, gpointer user_data)
 
     init_database (steppy);
     request_sensor (steppy);
+    setup_css (steppy);
     get_sensor_reading (steppy);
     update_step_count (steppy);
 
