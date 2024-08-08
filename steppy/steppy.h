@@ -6,7 +6,8 @@
 #include <gio/gio.h>
 
 #define APP_ID "io.furios.Steppy"
-#define UPDATE_INTERVAL 1
+#define UPDATE_INTERVAL_FOREGROUND 1
+#define UPDATE_INTERVAL_BACKGROUND 300
 
 typedef struct {
     AdwApplication *app;

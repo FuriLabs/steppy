@@ -76,7 +76,26 @@ show_preferences (GSimpleAction *action, GVariant *parameter, gpointer user_data
 static void
 window_close_handler(GtkWindow *window, gpointer user_data)
 {
+    SteppyApp *steppy = (SteppyApp *)user_data;
     gtk_widget_set_visible(GTK_WIDGET(window), FALSE);
+
+    if (steppy->update_source_id > 0) {
+        g_source_remove(steppy->update_source_id);
+    }
+
+    steppy->update_source_id = g_timeout_add_seconds(UPDATE_INTERVAL_BACKGROUND, update_callback, steppy);
+}
+
+static void
+window_active_handler(GtkWindow *window, GParamSpec *pspec, gpointer user_data)
+{
+    SteppyApp *steppy = (SteppyApp *)user_data;
+
+    if (steppy->update_source_id > 0) {
+        g_source_remove(steppy->update_source_id);
+    }
+
+    steppy->update_source_id = g_timeout_add_seconds(gtk_window_is_active(window) ? UPDATE_INTERVAL_FOREGROUND : UPDATE_INTERVAL_BACKGROUND, update_callback, steppy);
 }
 
 static void
@@ -112,10 +131,17 @@ activate_cb (GtkApplication *app, gpointer user_data)
 
         g_signal_connect_swapped (pref_button, "clicked", G_CALLBACK (show_preferences), steppy);
         g_signal_connect(steppy->window, "close-request", G_CALLBACK(window_close_handler), steppy);
+        g_signal_connect(steppy->window, "notify::is-active", G_CALLBACK(window_active_handler), steppy);
     }
 
     update_ui (steppy);
     gtk_window_present (GTK_WINDOW (steppy->window));
+
+    if (steppy->update_source_id > 0) {
+        g_source_remove (steppy->update_source_id);
+    }
+
+    steppy->update_source_id = g_timeout_add_seconds (UPDATE_INTERVAL_FOREGROUND, update_callback, steppy);
 }
 
 static void
@@ -139,7 +165,7 @@ startup_cb (GtkApplication *app, gpointer user_data)
     get_sensor_reading (steppy);
     update_step_count (steppy);
 
-    steppy->update_source_id = g_timeout_add_seconds (UPDATE_INTERVAL, update_callback, steppy);
+    steppy->update_source_id = g_timeout_add_seconds (UPDATE_INTERVAL_BACKGROUND, update_callback, steppy);
 
     GSimpleAction *pref_action = g_simple_action_new ("preferences", NULL);
     g_signal_connect (pref_action, "activate", G_CALLBACK (show_preferences), steppy);
@@ -152,6 +178,8 @@ static void
 shutdown_cb (GtkApplication *app, gpointer user_data)
 {
     SteppyApp *steppy = (SteppyApp *)user_data;
+
+    update_step_count (steppy);
 
     if (steppy->update_source_id > 0) {
         g_source_remove (steppy->update_source_id);
